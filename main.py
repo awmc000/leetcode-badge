@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+import time
 from PIL import Image, ImageDraw, ImageFont
 
 class BadgeMaker:
@@ -9,13 +10,28 @@ class BadgeMaker:
         options = webdriver.FirefoxOptions()
         options.add_argument('--headless')
         self.driver = webdriver.Firefox(options=options)
+        self.easyXPath = '/html/body/div[1]/div[1]/div[4]/div/div[2]'\
+        '/div[1]/div[1]/div/div/div[2]/div[1]/div[2]'
+        self.medXPath = '/html/body/div[1]/div[1]/div[4]/div/div[2]'\
+        '/div[1]/div[1]/div/div/div[2]/div[2]/div[2]'
+        self.hardXPath = '/html/body/div[1]/div[1]/div[4]/div/div[2]'\
+        '/div[1]/div[1]/div/div/div[2]/div[3]/div[2]'
+
+    def draw_shadow(self, draw, text, font, pos):
+        x, y = pos
+        shadowcolor= (0, 0, 0)
+        draw.text((x-1, y-1), text, font=font, fill=shadowcolor)
+        draw.text((x+1, y-1), text, font=font, fill=shadowcolor)
+        draw.text((x-1, y+1), text, font=font, fill=shadowcolor)
+        draw.text((x+1, y+1), text, font=font, fill=shadowcolor)
 
     def getSolved(self, username):
         self.driver.get(f'https://www.leetcode.com/u/{username}')
-        self.driver.implicitly_wait(3.0)
-        easyElem = self.driver.find_element(By.XPATH, '/html/body/div[1]/div[1]/div[4]/div/div[2]/div[1]/div[1]/div/div/div[2]/div[1]/div[2]')
-        medElem = self.driver.find_element(By.XPATH,  '/html/body/div[1]/div[1]/div[4]/div/div[2]/div[1]/div[1]/div/div/div[2]/div[2]/div[2]')
-        hardElem = self.driver.find_element(By.XPATH, '/html/body/div[1]/div[1]/div[4]/div/div[2]/div[1]/div[1]/div/div/div[2]/div[3]/div[2]')
+        self.driver.implicitly_wait(4)
+
+        easyElem = self.driver.find_element(By.XPATH, self.easyXPath)
+        medElem = self.driver.find_element(By.XPATH,  self.medXPath)
+        hardElem = self.driver.find_element(By.XPATH, self.hardXPath)
 
         easySolved = easyElem.text[:easyElem.text.find('/')]
         medSolved = medElem.text[:medElem.text.find('/')]
@@ -26,17 +42,37 @@ class BadgeMaker:
     def createBadge(self, username):
         easySolved, medSolved, hardSolved = self.getSolved(username)
 
-        filename = f'pngs/lcbadge-{username}-{easySolved}-{medSolved}-{hardSolved}.png'
+        filename = f'pngs/lcbadge-{username}-{time.asctime()}.png'
 
         with Image.open('template-retro.png') as im:
-            font = ImageFont.truetype('univers.ttf', 12)
+            font = ImageFont.truetype('univers.ttf', 8)
+            font2 = ImageFont.truetype('univers.ttf', 10)
             easyFill = (28, 186, 186)
             medFill = (255, 183, 0)
             hardFill = (246, 55, 55)
             draw = ImageDraw.Draw(im)
-            draw.text((2, 0), f'EZ:{easySolved}', easyFill, font=font)
-            draw.text((2, 8), f'MD:{medSolved}', medFill, font=font)
-            draw.text((2, 16), f'HD:{hardSolved}', hardFill, font=font)
+
+            positions = {'username': (2, 0), 'easy': (4, 10), 'medium': (35, 10), 
+                         'hard': (70, 10), 'first slash': (25, 10), 'second slash': (55, 10),
+                         'join me': (2, 20)}
+
+            draw.text(positions['username'], f'{username} solved', (0,0,0), font=font)
+
+            self.draw_shadow(draw, f'{easySolved}', font2, positions['easy'])
+            draw.text(positions['easy'], f'{easySolved}', easyFill, font=font2)
+            
+            draw.text(positions['first slash'], '/', (0, 0, 0))
+
+            self.draw_shadow(draw, f'{medSolved}', font2, positions['medium'])
+            draw.text(positions['medium'], f'{medSolved}', medFill, font=font2)
+
+            draw.text(positions['second slash'], '/', (0, 0, 0))
+
+
+            self.draw_shadow(draw, f'{hardSolved}', font2, positions['hard'])
+            draw.text(positions['hard'], f'{hardSolved}', hardFill, font=font2)
+            
+            draw.text(positions['join me'], f'Join me on LeetCode!', (0,0,0), font=font)
             im.save(filename)
             return filename
 
