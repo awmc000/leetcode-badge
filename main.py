@@ -2,8 +2,31 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-import time
 from PIL import Image, ImageDraw, ImageFont
+import time
+import sqlite3
+
+class BadgeMakerDatabaseLink:
+    def __init__(self):
+        self.dbFile = 'lcbadge.db'
+        self.dbConnection = sqlite3.connect(self.dbFile)
+        self.dbCursor = self.dbConnection.cursor()
+        # self.dbCursor.execute("CREATE TABLE scores(username, easy, medium, hard, date)")
+    
+    def makeRecord(self, username, easy, medium, hard):
+        self.dbCursor.execute(f"""
+            INSERT INTO scores ({username}, {easy}, {medium}, {hard})
+        """)
+
+    def recordExists(self, username):
+        res = self.dbCursor.execute(f"""
+            SELECT username FROM scores WHERE date == DATE('now') AND username == {username}
+        """)
+        fetch = res.fetchone() 
+        if len(fetch) == 1:
+            return fetch[0]
+        else:
+            return None
 
 class BadgeMaker:
     def __init__(self):
@@ -16,16 +39,24 @@ class BadgeMaker:
         '/div[1]/div[1]/div/div/div[2]/div[2]/div[2]'
         self.hardXPath = '/html/body/div[1]/div[1]/div[4]/div/div[2]'\
         '/div[1]/div[1]/div/div/div[2]/div[3]/div[2]'
+        self.dbLink = BadgeMakerDatabaseLink()
 
     def draw_shadow(self, draw, text, font, pos):
         x, y = pos
-        shadowcolor= (0, 0, 0)
+        shadowcolor = (0, 0, 0)
         draw.text((x-1, y-1), text, font=font, fill=shadowcolor)
         draw.text((x+1, y-1), text, font=font, fill=shadowcolor)
         draw.text((x-1, y+1), text, font=font, fill=shadowcolor)
         draw.text((x+1, y+1), text, font=font, fill=shadowcolor)
 
     def getSolved(self, username):
+
+        # Check if we already fetched their data today before fetching it again.
+        exists = self.dbLink.recordExists(username)
+        
+        if exists:
+            return exists
+        
         self.driver.get(f'https://www.leetcode.com/u/{username}')
         self.driver.implicitly_wait(4)
 
@@ -36,7 +67,10 @@ class BadgeMaker:
         easySolved = easyElem.text[:easyElem.text.find('/')]
         medSolved = medElem.text[:medElem.text.find('/')]
         hardSolved = hardElem.text[:hardElem.text.find('/')]
-        
+
+        # Make a record so they cannot request a new image in the same day.
+        self.dbLink.makeRecord(username, easySolved, medSolved, hardSolved)
+
         return (easySolved, medSolved, hardSolved)
 
     def createBadge(self, username):
