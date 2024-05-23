@@ -1,4 +1,4 @@
-async function SubmitVars() {
+async function SubmitUsername() {
     var formData = new FormData(document.forms[0])
 
     var obj = Object.fromEntries(Array.from(formData.keys())
