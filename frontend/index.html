@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Leetcode Badge Generator</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="action.js"></script>
+  </head>
+  
+  <body>
+    <div style="margin: 0 auto; width: 600px">
+      <p>
+      Enter your Leetcode username to generate an 88x31 badge showing your easy, medium, and hard problems solved!
+      </p>
+      <form id="form" method="GET" action="" role="form">
+          <input id="username-txt" type="text" name="username">
+          <input id="submit-btn" type="submit" value="Submit" placeholder="awmc2000" onclick="SubmitVars(); this.disabled = true">
+      </form>
+      <p>
+      Your result will appear below. You can right click to save it to your device.
+      </p>
+      <div style="background-color: grey; width: 88px; height: 31px; border-style: dotted;">
+      <img id="badgeImage" src="">
+      </div>
+      <p>Want to see how it works? Check out my Github repo at <a href="https://www.github.com/awmc000/leetcode-badge">https://www.github.com/awmc000/leetcode-badge</a></p>
+      <small>Made by <a href="https://amccolm.codes">amccolm.codes</a> over the May Long Weekend, 2024.</small>
+    </div>
+    </body>
+</html>
