@@ -1,10 +1,15 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from PIL import Image, ImageDraw, ImageFont
 import time
 import sqlite3
+
+class UsernameItem(BaseModel):
+    username: str
 
 class BadgeMakerDatabaseLink:
     def __init__(self):
@@ -111,11 +116,22 @@ class BadgeMaker:
             return filename
 
 app = FastAPI()
-badgeMaker = BadgeMaker()
 
-@app.get("/{username}")
-def returnBadge(username: str):
+badgeMaker = BadgeMaker()
+@app.post("/")
+def returnBadge(usernameItem: UsernameItem):
+    print(usernameItem.username)
     headers = {'Access-Control-Expose-Headers': 'Content-Disposition'}
-    return FileResponse(badgeMaker.createBadge(username), 
-                        filename=f'{username}-badge.png',
+    return FileResponse(badgeMaker.createBadge(usernameItem.username), 
+                        filename=f'{usernameItem.username}-badge.png',
                         headers=headers)
+
+# Allow other origin access
+origins=["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
