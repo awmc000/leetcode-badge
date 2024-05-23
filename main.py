@@ -9,22 +9,22 @@ import sqlite3
 class BadgeMakerDatabaseLink:
     def __init__(self):
         self.dbFile = 'lcbadge.db'
-        self.dbConnection = sqlite3.connect(self.dbFile)
+        self.dbConnection = sqlite3.connect(self.dbFile, check_same_thread=False)
         self.dbCursor = self.dbConnection.cursor()
         # self.dbCursor.execute("CREATE TABLE scores(username, easy, medium, hard, date)")
     
     def makeRecord(self, username, easy, medium, hard):
         self.dbCursor.execute(f"""
-            INSERT INTO scores ({username}, {easy}, {medium}, {hard})
+            INSERT INTO scores VALUES ('{username}', {easy}, {medium}, {hard}, DATE('now'))
         """)
 
     def recordExists(self, username):
         res = self.dbCursor.execute(f"""
-            SELECT username FROM scores WHERE date == DATE('now') AND username == {username}
+            SELECT easy, medium, hard FROM scores WHERE date LIKE DATE('now') AND username LIKE '{username}'
         """)
         fetch = res.fetchone() 
-        if len(fetch) == 1:
-            return fetch[0]
+        if fetch is not None:
+            return fetch
         else:
             return None
 
@@ -115,4 +115,7 @@ badgeMaker = BadgeMaker()
 
 @app.get("/{username}")
 def returnBadge(username: str):
-    return FileResponse(badgeMaker.createBadge(username))
+    headers = {'Access-Control-Expose-Headers': 'Content-Disposition'}
+    return FileResponse(badgeMaker.createBadge(username), 
+                        filename=f'{username}-badge.png',
+                        headers=headers)
