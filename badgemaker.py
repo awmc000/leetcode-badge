@@ -1,8 +1,8 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
 from PIL import Image, ImageDraw, ImageFont
 import time
 import sqlite3
+import requests
+import json
 
 class BadgeMakerDatabaseLink:
     def __init__(self):
@@ -27,15 +27,6 @@ class BadgeMakerDatabaseLink:
 
 class BadgeMaker:
     def __init__(self):
-        options = webdriver.FirefoxOptions()
-        options.add_argument('--headless')
-        self.driver = webdriver.Firefox(options=options)
-        self.easyXPath = '/html/body/div[1]/div[1]/div[4]/div/div[2]'\
-        '/div[1]/div[1]/div/div/div[2]/div[1]/div[2]'
-        self.medXPath = '/html/body/div[1]/div[1]/div[4]/div/div[2]'\
-        '/div[1]/div[1]/div/div/div[2]/div[2]/div[2]'
-        self.hardXPath = '/html/body/div[1]/div[1]/div[4]/div/div[2]'\
-        '/div[1]/div[1]/div/div/div[2]/div[3]/div[2]'
         self.dbLink = BadgeMakerDatabaseLink()
 
     def draw_shadow(self, draw, text, font, pos):
@@ -47,23 +38,46 @@ class BadgeMaker:
         draw.text((x+1, y+1), text, font=font, fill=shadowcolor)
 
     def getSolved(self, username):
-
         # Check if we already fetched their data today before fetching it again.
         exists = self.dbLink.recordExists(username)
-        
+
         if exists:
             return exists
-        
-        self.driver.get(f'https://www.leetcode.com/u/{username}')
-        self.driver.implicitly_wait(4)
 
-        easyElem = self.driver.find_element(By.XPATH, self.easyXPath)
-        medElem = self.driver.find_element(By.XPATH,  self.medXPath)
-        hardElem = self.driver.find_element(By.XPATH, self.hardXPath)
+        # GraphQL query
+        query = """
+        query getUserProfile($username: String!) {
+            allQuestionsCount {
+            difficulty
+            count
+            }
+            matchedUser(username: $username) {
+                username
+                submitStats {
+                    acSubmissionNum {
+                        difficulty
+                        count
+                    }
+                }
+            }
+        }
+        """
 
-        easySolved = easyElem.text[:easyElem.text.find('/')]
-        medSolved = medElem.text[:medElem.text.find('/')]
-        hardSolved = hardElem.text[:hardElem.text.find('/')]
+        # Prepare GraphQL POST request
+        variables = {"username": username}
+        response = requests.post('https://leetcode.com/graphql',
+            json={"query": query, "variables": variables})
+        deserialize = json.loads(response.text)
+
+        # If that username does not exist, this key will exist
+        if 'errors' in deserialize.keys():
+            return (0, 0, 0)
+
+        # Extract the number of each problem type solved
+        submissions = deserialize['data']['matchedUser']['submitStats']['acSubmissionNum']
+        easySolved = int(submissions[1]['count'])
+        medSolved = int(submissions[2]['count'])
+        hardSolved = int(submissions[3]['count'])
 
         # Make a record so they cannot request a new image in the same day.
         self.dbLink.makeRecord(username, easySolved, medSolved, hardSolved)
