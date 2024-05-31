@@ -18,6 +18,14 @@ def returnBadge(usernameItem: UsernameItem):
                         filename=f'{usernameItem.username}-badge.png',
                         headers=headers)
 
+@app.post("/pie")
+def returnChart(usernameItem: UsernameItem):
+    headers = {'Access-Control-Expose-Headers': 'Content-Disposition'}
+    return FileResponse(badgeMaker.createPieChart(usernameItem.username), 
+                        filename=f'{usernameItem.username}-chart.png',
+                        headers=headers)
+
+
 # Allow other origin access
 origins=["*"]
 app.add_middleware(

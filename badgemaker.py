@@ -1,8 +1,10 @@
 from PIL import Image, ImageDraw, ImageFont
+import matplotlib.pyplot as plt
 import time
 import sqlite3
 import requests
 import json
+
 
 class BadgeMakerDatabaseLink:
     def __init__(self):
@@ -37,6 +39,39 @@ class BadgeMaker:
         draw.text((x-1, y+1), text, font=font, fill=shadowcolor)
         draw.text((x+1, y+1), text, font=font, fill=shadowcolor)
 
+    def getTotalProblems(self, username="awmc2000"):
+        if self.cachedResponse is None:
+            # GraphQL query
+            query = """
+            query getUserProfile($username: String!) {
+                allQuestionsCount {
+                difficulty
+                count
+                }
+                matchedUser(username: $username) {
+                    username
+                    submitStats {
+                        acSubmissionNum {
+                            difficulty
+                            count
+                        }
+                    }
+                }
+            }
+            """
+
+            # Prepare GraphQL POST request
+            variables = {"username": username}
+            response = requests.post('https://leetcode.com/graphql',
+                json={"query": query, "variables": variables})
+            deserialize = json.loads(response.text)
+        else:
+            deserialize = self.cachedResponse
+
+        counts = deserialize['data']['allQuestionsCount']
+
+        return (counts[1]['count'], counts[2]['count'], counts[3]['count'])
+
     def getSolved(self, username):
         # Check if we already fetched their data today before fetching it again.
         exists = self.dbLink.recordExists(username)
@@ -68,6 +103,10 @@ class BadgeMaker:
         response = requests.post('https://leetcode.com/graphql',
             json={"query": query, "variables": variables})
         deserialize = json.loads(response.text)
+
+        # Update the cached response each time,
+        # in case there are new problems added
+        self.cachedResponse = deserialize
 
         # If that username does not exist, this key will exist
         if 'errors' in deserialize.keys():
@@ -114,3 +153,16 @@ class BadgeMaker:
             draw.text(positions['join me'], f'Join me on LeetCode!', (0,0,0), font=font)
             im.save(filename)
             return filename
+
+    def createPieChart(self, username):
+        easySolved, medSolved, hardSolved = self.getSolved(username)
+        easyTotal, medTotal, hardTotal = self.getTotalProblems(username)
+        solved = easySolved + medSolved + hardSolved
+        unsolved = easyTotal + medTotal + hardTotal - solved
+        labels = ["Easy", "Medium", "Hard", "Unsolved"]
+        fig, ax = plt.subplots()
+        ax.pie([easySolved, medSolved, hardSolved, unsolved], labels=labels,
+               colors=['green', 'yellow', 'red', 'gray'])
+        filename = f'pngs/lcpie-{username}-{time.asctime()}.png'
+        plt.savefig(filename, bbox_inches='tight')
+        return filename

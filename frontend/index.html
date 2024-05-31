@@ -17,9 +17,12 @@
       </p>
       <form id="form" method="" action="" role="form">
           <input id="username-txt" type="text" name="username">
-          <input id="submit-btn" type="submit" value="Submit" 
+          <input id="submit-btn" type="submit" value="Create Badge" 
           placeholder="awmc2000" 
           onclick="submitUsername(); this.disabled = true">
+          <input id="submit-btn2" type="submit" value="Create Pie Chart" 
+          placeholder="awmc2000" 
+          onclick="submitUsernameChart(); this.disabled = true">
       </form>
       <p>
         Your result will appear below. You can right click to save 
@@ -28,6 +31,11 @@
       <div style="background-color: grey; width: 88px; 
       height: 31px; border-style: dotted;">
         <img id="badgeImage" src="">
+      </div>
+      <br>
+      <div style="background-color: grey; width:278px;
+      height: 234px; border-style: dotted;">
+        <img id="chartImage" src="">
       </div>
       <p>
         Want to see how it works? Check out my Github repo at 
