@@ -156,13 +156,10 @@ class BadgeMaker:
 
     def createPieChart(self, username):
         easySolved, medSolved, hardSolved = self.getSolved(username)
-        easyTotal, medTotal, hardTotal = self.getTotalProblems(username)
-        solved = easySolved + medSolved + hardSolved
-        unsolved = easyTotal + medTotal + hardTotal - solved
-        labels = ["Easy", "Medium", "Hard", "Unsolved"]
+        labels = [f'Easy: [{easySolved}]', f'Medium: [{medSolved}]', f'Hard: [{hardSolved}]']
         fig, ax = plt.subplots()
-        ax.pie([easySolved, medSolved, hardSolved, unsolved], labels=labels,
-               colors=['green', 'yellow', 'red', 'gray'])
+        ax.pie([easySolved, medSolved, hardSolved], labels=labels,
+               colors=['deepskyblue', 'orange', 'orangered', 'gray'])
         filename = f'pngs/lcpie-{username}-{time.asctime()}.png'
         plt.savefig(filename, bbox_inches='tight')
         return filename
