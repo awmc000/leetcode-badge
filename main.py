@@ -10,6 +10,16 @@ class UsernameItem(BaseModel):
 
 app = FastAPI()
 
+# Allow other origin access
+origins=["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 badgeMaker = BadgeMaker()
 @app.post("/")
 def returnBadge(usernameItem: UsernameItem):
@@ -24,14 +34,3 @@ def returnChart(usernameItem: UsernameItem):
     return FileResponse(badgeMaker.createPieChart(usernameItem.username), 
                         filename=f'{usernameItem.username}-chart.png',
                         headers=headers)
-
-
-# Allow other origin access
-origins=["*"]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)

@@ -27,7 +27,7 @@ async function submitUsername() {
         return;
     }
 
-    const response = await fetch('http://127.0.0.1:8000', {
+    const response = await fetch('https://leetcode-badge-eight.vercel.app', {
         method: "POST",
         body: jsonreq,
         headers: {"Content-type": "application/json; charset=UTF-8"}
@@ -59,7 +59,7 @@ async function submitUsernameChart() {
         return;
     }
 
-    const response = await fetch('http://127.0.0.1:8000/pie', {
+    const response = await fetch('https://leetcode-badge-eight.vercel.app/pie', {
         method: "POST",
         body: jsonreq,
         headers: {"Content-type": "application/json; charset=UTF-8"}
