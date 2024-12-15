@@ -1,0 +1,44 @@
+        GraphQL QUERY:
+        query getUserProfile($username: String!) {
+            allQuestionsCount {
+            difficulty
+            count
+            }
+            matchedUser(username: $username) {
+                username
+                submitStats {
+                    acSubmissionNum {
+                        difficulty
+                        count
+                    }
+                }
+            }
+        }
+        
+        GraphQL QUERY OUTPUT:
+        {'data': 
+            {'allQuestionsCount': 
+                [{'difficulty': 'All', 'count': 3165}, 
+                {'difficulty': 'Easy', 'count': 797}, 
+                {'difficulty': 'Medium', 'count': 1662}, 
+                {'difficulty': 'Hard', 'count': 706}], 
+                
+                'matchedUser': 
+                    {'username': 
+                        'awmc2000', 
+                        'submitStats': 
+                        {'acSubmissionNum': 
+                            [{'difficulty': 
+                                'All', 'count': 65}, 
+                                {'difficulty': 'Easy', 'count': 48}, 
+                                {'difficulty': 'Medium', 'count': 16}, 
+                                {'difficulty': 'Hard', 'count': 1}]}}}}
+            
+        Acessing Dictionary:
+            [{'difficulty': 'All', 'count': 65}, {'difficulty': 'Easy', 'count': 48}, {'difficulty': 'Medium', 'count': 16}, {'difficulty': 'Hard', 'count': 1}]
+            >>> s['data']['matchedUser']['submitStats']['acSubmissionNum'][1]
+            {'difficulty': 'Easy', 'count': 48}
+            >>> s['data']['matchedUser']['submitStats']['acSubmissionNum'][2]
+            {'difficulty': 'Medium', 'count': 16}
+            >>> s['data']['matchedUser']['submitStats']['acSubmissionNum'][3]
+            {'difficulty': 'Hard', 'count': 1}
