@@ -2,34 +2,69 @@ from PIL import Image, ImageDraw, ImageFont
 import matplotlib.pyplot as plt
 import time
 import sqlite3
+import psycopg2
 import requests
 import json
 
 
 class BadgeMakerDatabaseLink:
-    def __init__(self):
-        self.dbFile = 'lcbadge.db'
-        self.dbConnection = sqlite3.connect(self.dbFile, check_same_thread=False)
-        self.dbCursor = self.dbConnection.cursor()
-    
+    def __init__(self, local=True):
+        self.local = local
+        if self.local:
+            self.dbFile = 'lcbadge.db'
+            self.dbConnection = sqlite3.connect(self.dbFile, check_same_thread=False)
+            self.dbCursor = self.dbConnection.cursor()
+        else:
+            self.dbConnection = psycopg2.connect(dbname="neondb",
+                                         user="neondb_owner",
+                                         password="ZA4VqJ8lFRvu",
+                                         host="ep-odd-paper-a6qfm216-pooler.us-west-2.aws.neon.tech")
+            self.dbCursor = self.dbConnection.cursor()
+
     def makeRecord(self, username, easy, medium, hard):
-        self.dbCursor.execute(f"""
-            INSERT INTO scores VALUES ('{username}', {easy}, {medium}, {hard}, DATE('now'))
-        """)
+        '''
+        Inserts a record into the database of a username and that user's solved count
+        for each difficulty.
+        '''
+        if self.local:
+            self.dbCursor.execute(f"""
+                INSERT INTO scores VALUES ('{username}', {easy}, {medium}, {hard}, DATE('now'))
+            """)
+        else:
+            self.dbCursor.execute(f"""
+                INSERT INTO scores VALUES ('{username}', {easy}, {medium}, {hard}, NOW()::date)
+            """)
 
     def recordExists(self, username):
-        res = self.dbCursor.execute(f"""
-            SELECT easy, medium, hard FROM scores WHERE date LIKE DATE('now') AND username LIKE '{username}'
-        """)
-        fetch = res.fetchone() 
+        '''
+        Returns a tuple of the form (easy, med, hard) for a given user's problems solved.
+        Or None if the record could not be found.
+        '''
+        if self.local:
+            res = self.dbCursor.execute(f"""
+                SELECT easy, medium, hard FROM scores WHERE date LIKE DATE('now') AND username LIKE '{username}'
+            """)
+        else:
+            res = self.dbCursor.execute(f"""
+                SELECT easy, medium, hard FROM scores WHERE date_made = NOW()::date AND username LIKE '{username}'
+            """)
+        
+        # When using Postgres, `res` is None if there is no record found.
+        # When using sqlite, `res` is not None, but `fetch`` will still be None.
+        if res is None:
+            return None
+        
+        fetch = res.fetchone()
+        
         if fetch is not None:
             return fetch
         else:
             return None
 
+
 class BadgeMaker:
-    def __init__(self):
-        self.dbLink = BadgeMakerDatabaseLink()
+    def __init__(self, local=True):
+        self.dbLink = BadgeMakerDatabaseLink(local)
 
     def draw_shadow(self, draw, text, font, pos):
         x, y = pos

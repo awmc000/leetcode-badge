@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-badgeMaker = BadgeMaker()
+badgeMaker = BadgeMaker(local=False)
 @app.post("/")
 def returnBadge(usernameItem: UsernameItem):
     headers = {'Access-Control-Expose-Headers': 'Content-Disposition'}
