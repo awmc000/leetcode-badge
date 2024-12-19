@@ -1,3 +1,4 @@
+from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 import matplotlib.pyplot as plt
 import time
@@ -186,8 +187,12 @@ class BadgeMaker:
             draw.text(positions['hard'], f'{hardSolved}', hardFill, font=font2)
             
             draw.text(positions['join me'], f'Join me on LeetCode!', (0,0,0), font=font)
-            im.save(filename)
-            return filename
+
+            buffer = BytesIO()
+            im.save(buffer, format='PNG')  # Save as PNG
+            buffer.seek(0)  # Reset the buffer's position to the beginning
+
+            return buffer
 
     def createPieChart(self, username):
         easySolved, medSolved, hardSolved = self.getSolved(username)

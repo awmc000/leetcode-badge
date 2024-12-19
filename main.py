@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -23,10 +23,16 @@ app.add_middleware(
 badgeMaker = BadgeMaker(local=False)
 @app.post("/")
 def returnBadge(usernameItem: UsernameItem):
-    headers = {'Access-Control-Expose-Headers': 'Content-Disposition'}
-    return FileResponse(badgeMaker.createBadge(usernameItem.username), 
-                        filename=f'{usernameItem.username}-badge.png',
-                        headers=headers)
+    headers = {
+        'Access-Control-Expose-Headers': 'Content-Disposition',
+        "Content-Disposition": "inline; filename=image.png",
+        "Cache-Control": "max-age=3600"
+    }
+    return StreamingResponse(
+        content=badgeMaker.createBadge(usernameItem.username),
+        media_type="image/png",
+        headers=headers
+    )
 
 @app.post("/pie")
 def returnChart(usernameItem: UsernameItem):
