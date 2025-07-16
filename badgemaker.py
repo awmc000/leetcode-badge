@@ -6,7 +6,7 @@ import sqlite3
 import psycopg2
 import requests
 import json
-
+import os
 
 class BadgeMakerDatabaseLink:
     def __init__(self, local=True):
@@ -16,10 +16,12 @@ class BadgeMakerDatabaseLink:
             self.dbConnection = sqlite3.connect(self.dbFile, check_same_thread=False)
             self.dbCursor = self.dbConnection.cursor()
         else:
-            self.dbConnection = psycopg2.connect(dbname="neondb",
-                                         user="neondb_owner",
-                                         password="ZA4VqJ8lFRvu",
-                                         host="ep-odd-paper-a6qfm216-pooler.us-west-2.aws.neon.tech")
+            self.dbConnection = psycopg2.connect(
+                dbname=os.getenv("LCB_DB_NAME"),
+                user=os.getenv("LCB_DB_USER"),
+                password=os.getenv("LCB_DB_PASS"),
+                host=os.getenv("LCB_DB_HOST")
+            )
             self.dbCursor = self.dbConnection.cursor()
 
     def makeRecord(self, username, easy, medium, hard):
